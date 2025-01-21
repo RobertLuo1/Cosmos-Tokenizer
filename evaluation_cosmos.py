@@ -284,68 +284,6 @@ class ImageNetBase(Dataset):
                                size=retrieve(self.config, "size", default=0),
                                random_crop=self.random_crop)
 
-
-class ImageNetTrain(ImageNetBase):
-    NAME = "train"
-    URL = "http://www.image-net.org/challenges/LSVRC/2012/"
-    AT_HASH = "a306397ccf9c2ead27155983c254227c0fd938e2"
-    FILES = [
-        "ILSVRC2012_img_train.tar",
-    ]
-    SIZES = [
-        147897477120,
-    ]
-
-    def _prepare(self):
-        self.random_crop = retrieve(self.config, "ImageNetTrain/random_crop",
-                                    default=True)
-        cachedir = os.environ.get("XDG_CACHE_HOME", os.path.expanduser("/group/40033/public_datasets/imagenet")) #specfy the path
-        self.root = os.path.join(cachedir, self.NAME)
-        self.datadir = self.root
-        # self.txt_filelist = os.path.join(self.root, "filelist.txt")
-
-        if "subset" in self.config and self.config["subset"] is not None:  # for debugging
-            self.txt_filelist = os.path.join("../../data", "{}_{}.txt".format(self.NAME, self.config["subset"]))
-        else:
-            self.txt_filelist = os.path.join(self.root, "filelist.txt")
-
-
-        self.expected_length = 1281167
-        if not is_prepared(self.root):
-            # prep
-            print("Preparing dataset {} in {}".format(self.NAME, self.root))
-
-            datadir = self.datadir
-            if not os.path.exists(datadir):
-                path = os.path.join(self.root, self.FILES[0])
-                if not os.path.exists(path) or not os.path.getsize(path)==self.SIZES[0]:
-                    import academictorrents as at
-                    atpath = at.get(self.AT_HASH, datastore=self.root)
-                    assert atpath == path
-
-                print("Extracting {} to {}".format(path, datadir))
-                os.makedirs(datadir, exist_ok=True)
-                with tarfile.open(path, "r:") as tar:
-                    tar.extractall(path=datadir)
-
-                print("Extracting sub-tars.")
-                subpaths = sorted(glob.glob(os.path.join(datadir, "*.tar")))
-                for subpath in tqdm(subpaths):
-                    subdir = subpath[:-len(".tar")]
-                    os.makedirs(subdir, exist_ok=True)
-                    with tarfile.open(subpath, "r:") as tar:
-                        tar.extractall(path=subdir)
-
-            filelist = glob.glob(os.path.join(datadir, "**", "*.JPEG"))
-            filelist = [os.path.relpath(p, start=datadir) for p in filelist]
-            filelist = sorted(filelist)
-            filelist = "\n".join(filelist)+"\n"
-            with open(self.txt_filelist, "w") as f:
-                f.write(filelist)
-
-            mark_prepared(self.root)
-
-
 class ImageNetValidation(ImageNetBase):
     NAME = "val"
     URL = "http://www.image-net.org/challenges/LSVRC/2012/"
