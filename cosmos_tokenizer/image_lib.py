@@ -126,3 +126,11 @@ class ImageTokenizer(torch.nn.Module):
         output_tensor = self.autoencode(input_tensor)
         padded_output_image = tensor2numpy(output_tensor)
         return unpad_image_batch(padded_output_image, crop_region)
+    
+    @torch.no_grad()
+    def forward_align(self, image):
+        input_tensor = image
+        # input tensor [B C H W] [-1 1]
+        output_tensor = self.autoencode(input_tensor)
+        # output tensor [B C H W] [-1 1]
+        return output_tensor
